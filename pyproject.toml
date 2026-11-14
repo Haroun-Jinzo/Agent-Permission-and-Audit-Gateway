@@ -1,0 +1,75 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agent-gateway"
+version = "0.1.0"
+description = "Permission and audit gateway for AI agent tool calls"
+readme = "README.md"
+requires-python = ">=3.12"
+# Runtime dependencies are added step by step (see the Build Plan), not all at once.
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=5",
+    "hypothesis>=6",
+    "ruff>=0.8",
+    "mypy>=1.13",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gateway", "src/gatewayctl"]
+
+# ----------------------------------------------------------------- ruff (lint + format)
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # import sorting
+    "B",        # likely bugs
+    "UP",       # modern syntax
+    "SIM",      # simplifications
+    "C4",       # comprehensions
+    "PT",       # pytest style
+    "RUF",      # ruff-specific
+    "S",        # security checks (bandit rules): worth having in a security project
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106"]   # asserts and fake passwords are normal in tests
+
+# ----------------------------------------------------------------- mypy (type checking)
+[tool.mypy]
+strict = true
+mypy_path = "src"
+packages = ["gateway", "gatewayctl"]
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_decorators = false
+
+# ----------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"
+markers = [
+    "unit: fast tests of one class or function",
+    "integration: several components working together",
+    "security: hostile-input and threat-model tests",
+    "property: randomized tests (Hypothesis)",
+    "e2e: end-to-end demo scenarios",
+    "slow: tests that take more than a few seconds",
+]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
