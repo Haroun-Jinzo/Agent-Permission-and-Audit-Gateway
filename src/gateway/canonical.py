@@ -40,6 +40,8 @@ def canonical_json(obj: Any) -> bytes:
 
 def call_hash(call: Any) -> str:
     """Compute the hash of a tool call object."""
+    if not isinstance(call, dict):
+        raise CanonicalError("call must be a dictionary")
     data = b"gwcall-v1\n" + canonical_json(call)
     return hashlib.sha256(data).hexdigest()
 
