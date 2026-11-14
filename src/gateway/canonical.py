@@ -40,23 +40,21 @@ def canonical_json(obj: Any) -> bytes:
 
 def call_hash(call: Any) -> str:
     """Compute the hash of a tool call object."""
-    return hashlib.sha256(b"gwcall-v1\n" + canonical_json(call)).hexdigest()
+    data = b"gwcall-v1\n" + canonical_json(call)
+    return hashlib.sha256(data).hexdigest()
 
 
 def genesis_hash(chain_id: str) -> str:
     """Compute the hash of an audit chain's identifier."""
     if not isinstance(chain_id, str):
         raise CanonicalError("chain_id must be a string")
-    return hashlib.sha256(b"gwaudit-genesis-v1\n" + chain_id.encode("utf-8")).hexdigest()
+    data = b"gwaudit-genesis-v1\n" + chain_id.encode("utf-8")
+    return hashlib.sha256(data).hexdigest()
 
 
 def entry_hash(previous_hash: str, body: Any) -> str:
     """Compute the hash of an audit entry linked to the previous hash."""
     if not isinstance(previous_hash, str):
         raise CanonicalError("previous_hash must be a string")
-    return hashlib.sha256(
-        b"gwaudit-v1\n"
-        + previous_hash.encode("utf-8")
-        + b"\n"
-        + canonical_json(body)
-    ).hexdigest()
+    data = b"gwaudit-v1\n" + previous_hash.encode("utf-8") + b"\n" + canonical_json(body)
+    return hashlib.sha256(data).hexdigest().hexdigest()
