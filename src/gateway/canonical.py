@@ -57,4 +57,4 @@ def entry_hash(previous_hash: str, body: Any) -> str:
     if not isinstance(previous_hash, str):
         raise CanonicalError("previous_hash must be a string")
     data = b"gwaudit-v1\n" + previous_hash.encode("utf-8") + b"\n" + canonical_json(body)
-    return hashlib.sha256(data).hexdigest().hexdigest()
+    return hashlib.sha256(data).hexdigest()
