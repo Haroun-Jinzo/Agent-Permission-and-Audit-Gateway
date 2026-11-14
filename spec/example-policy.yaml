@@ -1,0 +1,79 @@
+# Example policy document (version 1).
+schema_version: 1
+name: default-policy
+
+lists:
+  internal_domains: [company.example]
+  allowed_folders:  [/data/shared]
+  analyst_tables:   [sales_summary, product_catalog]
+
+rules:
+  - rule_id: R-INBOX-READ
+    effect: allow
+    description: Support and research agents may read the inbox.
+    applies_to: {roles: [support, research], tools: [read_inbox]}
+
+  - rule_id: R-FILE-READ
+    effect: allow
+    description: Support and research agents may read files inside the shared folder.
+    applies_to: {roles: [support, research], tools: [read_file]}
+    when:
+      all:
+        - {arg: path, op: path_within, list: allowed_folders}
+
+  - rule_id: R-EMAIL-INTERNAL
+    effect: allow
+    description: Support agents may email internal recipients.
+    applies_to: {roles: [support], tools: [send_email]}
+    when:
+      all:
+        - {arg: to, op: domain_in, list: internal_domains, quantifier: all}
+
+  - rule_id: R-EMAIL-EXTERNAL-ASK
+    effect: ask
+    description: Any external recipient needs approval, unless the task has touched confidential data.
+    applies_to: {roles: [support], tools: [send_email]}
+    when:
+      all:
+        - {arg: to, op: domain_not_in, list: internal_domains, quantifier: any}
+        - {task_labels: {none_of: [CONFIDENTIAL, SECRET]}}
+
+  - rule_id: R-EXFIL-1
+    effect: block
+    description: No external recipient once the task has touched confidential or secret data.
+    applies_to: {roles: ["*"], tools: [send_email]}
+    when:
+      all:
+        - {arg: to, op: domain_not_in, list: internal_domains, quantifier: any}
+        - {task_labels: {any_of: [CONFIDENTIAL, SECRET]}}
+
+  - rule_id: R-SECRET-SINK-BLOCK
+    effect: block
+    description: Once a task has touched secret data, no tool that sends data out may run.
+    applies_to: {roles: ["*"], tools: ["*"]}
+    when:
+      all:
+        - {manifest: external_sink, equals: true}
+        - {task_labels: {any_of: [SECRET]}}
+
+  - rule_id: R-DELETE-ASK
+    effect: ask
+    description: Deleting a file always needs approval.
+    applies_to: {roles: [support], tools: [delete_file]}
+
+  - rule_id: R-DB-SELECT
+    effect: allow
+    description: Analysts may run SELECT statements on the approved tables.
+    applies_to: {roles: [analyst], tools: [db_query]}
+    when:
+      all:
+        - {derived: statement_type, op: equals, value: SELECT}
+        - {derived: tables, op: in, list: analyst_tables, quantifier: all}
+
+  - rule_id: R-DB-WRITE-BLOCK
+    effect: block
+    description: The database tool never runs anything but SELECT.
+    applies_to: {roles: ["*"], tools: [db_query]}
+    when:
+      all:
+        - {derived: statement_type, op: not_equals, value: SELECT}

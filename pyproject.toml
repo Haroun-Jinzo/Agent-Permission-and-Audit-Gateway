@@ -9,7 +9,9 @@ description = "Permission and audit gateway for AI agent tool calls"
 readme = "README.md"
 requires-python = ">=3.12"
 # Runtime dependencies are added step by step (see the Build Plan), not all at once.
-dependencies = []
+dependencies = [
+    "canonicaljson>=2.0.0",
+]
 
 [dependency-groups]
 dev = [
@@ -28,6 +30,7 @@ packages = ["src/gateway", "src/gatewayctl"]
 line-length = 100
 target-version = "py312"
 src = ["src", "tests"]
+extend-exclude = ["spec", "tests/spec"]
 
 [tool.ruff.lint]
 select = [
@@ -54,11 +57,13 @@ packages = ["gateway", "gatewayctl"]
 warn_unreachable = true
 
 [[tool.mypy.overrides]]
-module = "tests.*"
+module = "vectors"
+ignore_missing_imports = true
 disallow_untyped_decorators = false
 
 # ----------------------------------------------------------------- pytest
 [tool.pytest.ini_options]
+pythonpath = ["spec"]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers --strict-config"
 markers = [

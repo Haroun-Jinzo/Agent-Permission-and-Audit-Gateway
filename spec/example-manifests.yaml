@@ -1,0 +1,104 @@
+# Example tool manifests (version 1). One document per tool.
+# Argument schemas use a restricted JSON Schema: no null, no floats.
+---
+schema_version: 1
+tool: read_inbox
+version: 1
+description: Read recent messages from the shared inbox.
+risk: medium
+external_sink: false
+timeout_seconds: 10
+max_response_bytes: 200000
+argument_schema:
+  type: object
+  properties:
+    limit: {type: integer, minimum: 1, maximum: 50}
+  required: [limit]
+  additionalProperties: false
+sensitive_fields: []
+derived_facts: []
+default_output_labels: [UNTRUSTED]   # anyone can email the inbox, so its content is untrusted
+label_rules: []
+---
+schema_version: 1
+tool: read_file
+version: 1
+description: Read a file from the shared storage.
+risk: medium
+external_sink: false
+timeout_seconds: 10
+max_response_bytes: 1000000
+argument_schema:
+  type: object
+  properties:
+    path: {type: string, minLength: 1, maxLength: 512}
+  required: [path]
+  additionalProperties: false
+sensitive_fields: []
+derived_facts: []
+default_output_labels: []
+label_rules:
+  - when: {arg: path, op: path_within, value: /data/shared/confidential}
+    labels: [CONFIDENTIAL]
+  - when: {arg: path, op: path_within, value: /data/shared/secrets}
+    labels: [SECRET]
+---
+schema_version: 1
+tool: send_email
+version: 1
+description: Send an email.
+risk: high
+external_sink: true               # data leaves the system through this tool
+timeout_seconds: 20
+max_response_bytes: 10000
+argument_schema:
+  type: object
+  properties:
+    to:      {type: array, items: {type: string, maxLength: 254}, minItems: 1, maxItems: 20}
+    subject: {type: string, maxLength: 200}
+    body:    {type: string, maxLength: 20000}
+  required: [to, subject, body]
+  additionalProperties: false
+sensitive_fields: [body]           # redacted in the audit log
+derived_facts: []
+default_output_labels: []
+label_rules: []
+---
+schema_version: 1
+tool: delete_file
+version: 1
+description: Delete a file from the shared storage.
+risk: critical
+external_sink: false
+timeout_seconds: 10
+max_response_bytes: 10000
+argument_schema:
+  type: object
+  properties:
+    path: {type: string, minLength: 1, maxLength: 512}
+  required: [path]
+  additionalProperties: false
+sensitive_fields: []
+derived_facts: []
+default_output_labels: []
+label_rules: []
+---
+schema_version: 1
+tool: db_query
+version: 1
+description: Run a read-only SQL query on the analytics database.
+risk: medium
+external_sink: false
+timeout_seconds: 30
+max_response_bytes: 2000000
+argument_schema:
+  type: object
+  properties:
+    sql:      {type: string, minLength: 1, maxLength: 4000}
+    max_rows: {type: integer, minimum: 1, maximum: 1000}
+  required: [sql, max_rows]
+  additionalProperties: false
+sensitive_fields: []
+derived_facts: [statement_type, tables]   # computed by the adapter's SQL parser
+default_output_labels: [CONFIDENTIAL]
+label_rules: []
