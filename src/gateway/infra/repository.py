@@ -3,8 +3,9 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
+
 class AgentScopeError(RuntimeError):
-    """Raised when an agent attempts to access a resource outside its scope.""" 
+    """Raised when an agent attempts to access a resource outside its scope."""
     pass
 
 class Repository:
@@ -14,7 +15,7 @@ class Repository:
         self._connection.execute("PRAGMA foreign_keys = ON")
         self.run_migrations()
 
-    def for_agent(self, agent_id: str) -> "ScopedRepository":
+    def for_agent(self, agent_id: str) -> ScopedRepository:
         if not agent_id:
             raise AgentScopeError("agent scope is required")
         return ScopedRepository(self._connection, agent_id)
@@ -26,7 +27,7 @@ class Repository:
 
         if not migration_path.is_file():
             raise RuntimeError(f"Migration file not found: {migration_path}")
-        
+
         self._connection.executescript(migration_path.read_text(encoding="utf-8"))
         self._connection.commit()
 
@@ -42,7 +43,7 @@ class ScopedRepository:
                 (self._agent_id,),
             )
         )
-    
+
     def get_approval(self, approval_id: str) -> sqlite3.Row | None:
         return self._connection.execute(
             "SELECT * FROM approvals WHERE approval_id = ? AND agent_id = ?",
