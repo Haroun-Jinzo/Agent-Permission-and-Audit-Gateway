@@ -1,7 +1,6 @@
-
 import pytest
 
-from gateway.infra.repository import AgentScopeError, Repository, ScopedRepository
+from gateway.infra.repository import AgentScopeError, Repository, ScopedRepository, connect_database
 
 
 def test_for_agent_returns_scoped_repository(tmp_path) -> None:
@@ -23,11 +22,8 @@ def test_empty_agent_scope_is_rejected(tmp_path) -> None:
 def test_foreign_keys_are_enabled(tmp_path) -> None:
     repository = Repository(tmp_path / "gateway.sqlite")
 
-    enabled = repository._connection.execute(
-        "PRAGMA foreign_keys"
-    ).fetchone()[0]
-
-    assert enabled == 1
+    with connect_database(repository._db_path) as connection:
+        assert connection.execute("PRAGMA foreign_keys").fetchone()[0] == 1
 
 
 def test_tasks_are_scoped_by_agent(tmp_path) -> None:

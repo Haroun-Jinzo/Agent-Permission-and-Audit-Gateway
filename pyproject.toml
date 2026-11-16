@@ -11,6 +11,7 @@ requires-python = ">=3.12"
 # Runtime dependencies are added step by step (see the Build Plan), not all at once.
 dependencies = [
     "canonicaljson>=2.0.0",
+    "cryptography>=42.0.0",
 ]
 
 [dependency-groups]
