@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-from pathlib import Path
-
-from gateway.infra.repository import connect_database
-
 import copy
-import json
-import sqlite3
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from gateway.canonical import canonical_json, entry_hash, genesis_hash
+from gateway.infra.repository import connect_database
 
 _REDACTED = "[REDACTED]"
 _SENSITIVE_KEYS = frozenset(
@@ -25,6 +21,7 @@ _SENSITIVE_KEYS = frozenset(
     }
 )
 
+
 @dataclass(frozen=True, slots=True)
 class AuditEntry:
     chain_id: str
@@ -38,22 +35,22 @@ class AuditEntry:
     def canonical_serialize(self) -> bytes:
         return canonical_json(self.body)
 
-
     def compute_hash(self) -> str:
         return entry_hash(self.prev_hash, self.body)
 
-#check if the value is a dict, if so, redact sensitive keys, if it's a list, recursively redact each item, otherwise return the value as is
+
 def redact(value: Any) -> Any:
     if isinstance(value, dict):
         return {
             key: _REDACTED if key.lower() in _SENSITIVE_KEYS else redact(nested)
             for key, nested in value.items()
         }
-    
+
     if isinstance(value, list):
         return [redact(nested) for nested in value]
-    
+
     return copy.deepcopy(value)
+
 
 class AuditWriter:
     def __init__(self, db_path: Path, agent_id: str) -> None:
@@ -78,11 +75,14 @@ class AuditWriter:
             # Update audit_heads.
 
             # Leaving the with block commits.
-            head = connection.execute("""
+            head = connection.execute(
+                """
                 SELECT head_seq, head_hash
                 FROM audit_heads
                 WHERE chain_id = ?
-                """, (self._agent_id,)).fetchone()
+                """,
+                (self._agent_id,),
+            ).fetchone()
 
             if head is None:
                 seq = 1
@@ -109,8 +109,17 @@ class AuditWriter:
                     prev_hash, entry_hash
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (self._agent_id, seq, timestamp, kind, body.get("call_hash"),
-                body.get("approval_id"), serialized_body, previous_hash, current_hash),
+                (
+                    self._agent_id,
+                    seq,
+                    timestamp,
+                    kind,
+                    body.get("call_hash"),
+                    body.get("approval_id"),
+                    serialized_body,
+                    previous_hash,
+                    current_hash,
+                ),
             )
 
             connection.execute(
@@ -124,7 +133,7 @@ class AuditWriter:
                 """,
                 (self._agent_id, seq, current_hash, timestamp),
             )
-        
+
         return AuditEntry(
             chain_id=self._agent_id,
             seq=seq,
@@ -132,7 +141,7 @@ class AuditWriter:
             kind=kind,
             body=body,
             prev_hash=previous_hash,
-            entry_hash=current_hash
+            entry_hash=current_hash,
         )
 
     def append_intent(
@@ -141,5 +150,9 @@ class AuditWriter:
         fields: dict[str, Any],
         timestamp: str,
     ) -> AuditEntry:
-        """ Append INTENT: callers must not execute if this raises."""
-        return self.append(kind="INTENT", fields=fields, timestamp=timestamp,)
+        """Append INTENT: callers must not execute if this raises."""
+        return self.append(
+            kind="INTENT",
+            fields=fields,
+            timestamp=timestamp,
+        )

@@ -145,9 +145,7 @@ def test_broken_previous_hash_is_rejected(tmp_path) -> None:
     assert result.valid is False
     assert result.broken_seq == 2
     assert result.checked_entries == 1
-    assert result.reason == (
-        "previous hash does not match the preceding entry"
-    )
+    assert result.reason == ("previous hash does not match the preceding entry")
 
 
 def test_broken_sequence_is_rejected(tmp_path) -> None:
@@ -193,9 +191,7 @@ def test_body_metadata_mismatch_is_rejected(tmp_path) -> None:
     assert result.valid is False
     assert result.broken_seq == 1
     assert result.checked_entries == 0
-    assert result.reason == (
-        "stored body does not match the other fields in the entry"
-    )
+    assert result.reason == ("stored body does not match the other fields in the entry")
 
 
 def test_compare_with_anchor_uses_chain_verification_until_s09(tmp_path) -> None:

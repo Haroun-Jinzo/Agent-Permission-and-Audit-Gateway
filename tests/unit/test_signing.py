@@ -1,6 +1,6 @@
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from gateway.canonical import canonical_json, call_hash
+from gateway.canonical import call_hash, canonical_json
 from gateway.evidence.signing import Ed25519Signer
 
 
