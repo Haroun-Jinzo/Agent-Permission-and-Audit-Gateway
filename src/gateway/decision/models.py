@@ -76,7 +76,7 @@ class ToolCall:
 @dataclass(frozen=True, slots=True)
 class ToolManifest:
     tool: str
-    version: str
+    version: int
     argument_schema: dict[str, Any]
     risk: str = "critical"
     external_sink: bool = False
@@ -86,7 +86,13 @@ class ToolManifest:
 
     def __post_init__(self) -> None:
         _require_text(self.tool, "tool")
-        _require_text(self.version, "version")
+        #_require_text(self.version, "version")
+
+        if isinstance(self.version, bool) or not isinstance(self.version, int):
+            raise TypeError("version must be an integer")
+
+        if self.version < 1:
+            raise ValueError("version must be positive")
 
         if not isinstance(self.argument_schema, dict):
             raise TypeError("argument_schema must be a dictionary")
@@ -99,10 +105,17 @@ class ToolManifest:
 
         for field_name in ("sensitive_fields", "derived_facts"):
             values = getattr(self, field_name)
+
             if not isinstance(values, list):
                 raise TypeError(f"{field_name} must be a list")
-            if not all(isinstance(value, str) and value for value in values):
-                raise ValueError(f"{field_name} must contain non-empty strings")
+
+            if not all(
+                isinstance(value, str) and value.strip()
+                for value in values
+            ):
+                raise ValueError(
+                    f"{field_name} must contain non-empty strings"
+                )
 
         if not isinstance(self.default_output_labels, set):
             raise TypeError("default_output_labels must be a set")

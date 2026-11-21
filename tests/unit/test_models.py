@@ -54,17 +54,17 @@ def test_tool_call_rejects_invalid_fields() -> None:
 def test_tool_manifest_defaults_to_critical_risk() -> None:
     manifest = ToolManifest(
         tool="send_email",
-        version="1",
+        version=1,
         argument_schema={},
     )
 
     assert manifest.risk == "critical"
 
-
+    
 def test_tool_manifest_validates_risk_and_labels() -> None:
     manifest = ToolManifest(
         tool="send_email",
-        version="1",
+        version=1,
         argument_schema={},
         risk="high",
         default_output_labels={DataLabel.CONFIDENTIAL},
@@ -73,12 +73,12 @@ def test_tool_manifest_validates_risk_and_labels() -> None:
     assert manifest.risk == "high"
 
     with pytest.raises(ValueError):
-        ToolManifest("send_email", "1", {}, risk="unknown")
+        ToolManifest("send_email", 1, {}, risk="unknown")
 
     with pytest.raises(TypeError):
         ToolManifest(
             "send_email",
-            "1",
+            1,
             {},
             default_output_labels={"SECRET"},
         )
