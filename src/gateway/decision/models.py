@@ -1,30 +1,36 @@
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-from gateway.canonical import canonical_json, call_hash as compute_call_hash
+from gateway.canonical import call_hash as compute_call_hash
+from gateway.canonical import canonical_json
+
 
 class DataLabel(Enum):
     """
     Enum representing different data labels.
     """
+
     PUBLIC = "PUBLIC"
     CONFIDENTIAL = "CONFIDENTIAL"
-    SECRET = "SECRET"
+    SECRET = "SECRET"  # noqa: S105
     UNTRUSTED = "UNTRUSTED"
+
 
 class Decision(Enum):
     """
     Enum representing different decision types.
     """
+
     ALLOW = "ALLOW"
     BLOCK = "BLOCK"
     ASK = "ASK"
 
+
 _RISKS = frozenset({"low", "medium", "high", "critical"})
+
 
 def _require_text(value: Any, field_name: str) -> str:
     if not isinstance(value, str):
@@ -32,6 +38,7 @@ def _require_text(value: Any, field_name: str) -> str:
     if not value.strip():
         raise ValueError(f"{field_name} must be a non-empty string")
     return value
+
 
 @dataclass(frozen=True, slots=True)
 class ToolCall:
@@ -41,7 +48,7 @@ class ToolCall:
     arguments: dict[str, Any]
     approval_id: str | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         _require_text(self.agent_id, "agent_id")
         _require_text(self.task_id, "task_id")
         _require_text(self.tool, "tool")
@@ -73,6 +80,7 @@ class ToolCall:
         """
         return compute_call_hash(self.to_dict())
 
+
 @dataclass(frozen=True, slots=True)
 class ToolManifest:
     tool: str
@@ -86,7 +94,7 @@ class ToolManifest:
 
     def __post_init__(self) -> None:
         _require_text(self.tool, "tool")
-        #_require_text(self.version, "version")
+        # _require_text(self.version, "version")
 
         if isinstance(self.version, bool) or not isinstance(self.version, int):
             raise TypeError("version must be an integer")
@@ -109,40 +117,42 @@ class ToolManifest:
             if not isinstance(values, list):
                 raise TypeError(f"{field_name} must be a list")
 
-            if not all(
-                isinstance(value, str) and value.strip()
-                for value in values
-            ):
-                raise ValueError(
-                    f"{field_name} must contain non-empty strings"
-                )
+            if not all(isinstance(value, str) and value.strip() for value in values):
+                raise ValueError(f"{field_name} must contain non-empty strings")
 
         if not isinstance(self.default_output_labels, set):
             raise TypeError("default_output_labels must be a set")
 
-        if not all(
-            isinstance(label, DataLabel)
-            for label in self.default_output_labels
-        ):
-            raise TypeError(
-                "default_output_labels must contain only DataLabel values"
-            )
-    
+        if not all(isinstance(label, DataLabel) for label in self.default_output_labels):
+            raise TypeError("default_output_labels must contain only DataLabel values")
+
 
 @dataclass(frozen=True, slots=True)
 class DecisionResult:
-        decision: Decision
-        rule_id: str
-        reason: str
-        policy_version: str
+    decision: Decision | str
+    rule_id: str
+    reason: str
+    policy_version: str
+    rule_ids: tuple[str, ...] = ()
+    errors: tuple[str, ...] = ()
 
-        def __post_init__(self):
-            if not isinstance(self.decision, Decision):
-                try:
-                    object.__setattr__(self, "decision", Decision(self.decision))
-                except ValueError as exc:
-                    raise ValueError("invalid decision") from exc
+    def __post_init__(self) -> None:
+        if not isinstance(self.decision, Decision):
+            try:
+                object.__setattr__(self, "decision", Decision(self.decision))
+            except (TypeError, ValueError) as exc:
+                raise ValueError("invalid decision") from exc
 
-            _require_text(self.rule_id, "rule_id")
-            _require_text(self.reason, "reason")
-            _require_text(self.policy_version, "policy_version")
+        _require_text(self.rule_id, "rule_id")
+        _require_text(self.reason, "reason")
+        _require_text(self.policy_version, "policy_version")
+
+        if not isinstance(self.rule_ids, tuple):
+            raise TypeError("rule_ids must be a tuple")
+        if not all(isinstance(rule_id, str) and rule_id.strip() for rule_id in self.rule_ids):
+            raise ValueError("rule_ids must contain non-empty strings")
+
+        if not isinstance(self.errors, tuple):
+            raise TypeError("errors must be a tuple")
+        if not all(isinstance(error, str) for error in self.errors):
+            raise TypeError("errors must contain strings")
