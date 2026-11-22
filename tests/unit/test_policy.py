@@ -1,8 +1,21 @@
+from pathlib import Path
+
 import yaml
 from gateway.policy_eval import validate, evaluate, PolicyError
 
-with open("example-policy.yaml", encoding="utf-8") as f: policy = yaml.safe_load(f)
-with open("example-manifests.yaml", encoding="utf-8") as f: manifests = {d["tool"]: d for d in yaml.safe_load_all(f)}
+SPEC_DIR = Path(__file__).resolve().parents[2] / "spec"
+
+with (SPEC_DIR / "example-policy.yaml").open(encoding="utf-8") as policy_file:
+    policy = yaml.safe_load(policy_file)
+
+with (SPEC_DIR / "example-manifests.yaml").open(
+    encoding="utf-8"
+) as manifest_file:
+    manifests = {
+        document["tool"]: document
+        for document in yaml.safe_load_all(manifest_file)
+    }
+
 validate(policy, manifests)
 
 def ev(**kw): return evaluate(policy, manifests, **kw)
