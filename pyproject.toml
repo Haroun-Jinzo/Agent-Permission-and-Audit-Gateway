@@ -65,7 +65,7 @@ disallow_untyped_decorators = false
 
 # ----------------------------------------------------------------- pytest
 [tool.pytest.ini_options]
-pythonpath = ["spec"]
+pythonpath = ["spec", "."]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers --strict-config"
 markers = [

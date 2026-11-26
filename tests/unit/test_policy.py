@@ -1,7 +1,8 @@
 from pathlib import Path
 
 import yaml
-from gateway.policy_eval import validate, evaluate, PolicyError
+
+from gateway.policy_eval import PolicyError, evaluate, validate
 
 SPEC_DIR = Path(__file__).resolve().parents[2] / "spec"
 

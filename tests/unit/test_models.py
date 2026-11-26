@@ -60,7 +60,7 @@ def test_tool_manifest_defaults_to_critical_risk() -> None:
 
     assert manifest.risk == "critical"
 
-    
+
 def test_tool_manifest_validates_risk_and_labels() -> None:
     manifest = ToolManifest(
         tool="send_email",
